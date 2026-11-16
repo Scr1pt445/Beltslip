@@ -100,8 +100,8 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.Save();
         }
 
-        finalScoreText.text = $"Счёт: {Score}";
-        bestScoreText.text = $"Рекорд: {best}";
+        finalScoreText.text = $"Score: {Score}";
+        bestScoreText.text = $"Best: {best}";
         scoreText.gameObject.SetActive(false);
         gameOverPanel.SetActive(true);
 
