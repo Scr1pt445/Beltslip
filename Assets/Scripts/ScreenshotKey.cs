@@ -1,9 +1,8 @@
+#if UNITY_EDITOR
 using System;
 using System.IO;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-#endif
 
 // Скриншоты для портфолио: F12 — снимок в двойном разрешении без интерфейса Unity.
 // Файлы сохраняются в папку Screenshots рядом с папкой Assets.
@@ -14,11 +13,7 @@ public class ScreenshotKey : MonoBehaviour
 
     void Update()
     {
-#if ENABLE_INPUT_SYSTEM
         bool pressed = Keyboard.current != null && Keyboard.current.f12Key.wasPressedThisFrame;
-#else
-        bool pressed = Input.GetKeyDown(KeyCode.F12);
-#endif
         if (!pressed) return;
 
         string folder = Path.Combine(Application.dataPath, "..", "Screenshots");
@@ -28,3 +23,4 @@ public class ScreenshotKey : MonoBehaviour
         Debug.Log($"Скриншот сохранён: {Path.GetFullPath(file)}");
     }
 }
+#endif
