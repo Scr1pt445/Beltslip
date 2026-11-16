@@ -39,7 +39,6 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         best = PlayerPrefs.GetInt(BestKey, 0);
-        Application.targetFrameRate = 60;
     }
 
     void Start()
