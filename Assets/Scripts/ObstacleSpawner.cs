@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 
-// Создаёт «ворота»: две колонны астероидов с проходом между ними.
+// Создаёт «ворота» через пул объектов: две колонны астероидов с проходом между ними.
 // С ростом скорости проход сужается, ворота идут чаще, проход сильнее «гуляет» по высоте.
 public class ObstacleSpawner : MonoBehaviour
 {
+    [SerializeField] Gate gatePrefab;
     [SerializeField] GameObject[] asteroidPrefabs;
     [SerializeField] Transform ship;
 
@@ -25,13 +28,49 @@ public class ObstacleSpawner : MonoBehaviour
     [SerializeField] float rockSize = 1.5f;
     [SerializeField, Range(0f, 0.5f)] float sizeJitter = 0.3f;
 
+    ObjectPool<Gate> gatePool;
+    readonly Dictionary<GameObject, ObjectPool<GameObject>> rockPools = new();
+    readonly List<Gate> activeGates = new();
+
     float distanceSinceLast;
     float lastGapCenter;
 
+    void Awake()
+    {
+        gatePool = new ObjectPool<Gate>(
+            createFunc: () => Instantiate(gatePrefab, transform),
+            actionOnGet: gate => gate.gameObject.SetActive(true),
+            actionOnRelease: ReleaseGateContents,
+            actionOnDestroy: gate => { if (gate) Destroy(gate.gameObject); },
+            collectionCheck: false,
+            defaultCapacity: 8,
+            maxSize: 16);
+
+        for (int i = 0; i < asteroidPrefabs.Length; i++)
+        {
+            var prefab = asteroidPrefabs[i];
+            if (prefab == null || rockPools.ContainsKey(prefab)) continue;
+
+            rockPools[prefab] = new ObjectPool<GameObject>(
+                createFunc: () => Instantiate(prefab, transform),
+                actionOnGet: rock => rock.SetActive(true),
+                actionOnRelease: rock =>
+                {
+                    rock.SetActive(false);
+                    rock.transform.SetParent(transform, false);
+                },
+                actionOnDestroy: rock => { if (rock) Destroy(rock); },
+                collectionCheck: false,
+                defaultCapacity: 20,
+                maxSize: 64);
+        }
+    }
+
     public void ResetSpawner()
     {
-        foreach (var gate in FindObjectsByType<Gate>(FindObjectsSortMode.None))
-            Destroy(gate.gameObject);
+        for (int i = activeGates.Count - 1; i >= 0; i--)
+            DespawnGate(activeGates[i]);
+
         distanceSinceLast = 0f;
         lastGapCenter = 0f;
     }
@@ -62,10 +101,10 @@ public class ObstacleSpawner : MonoBehaviour
             fieldTop - edgeMargin - half);
         lastGapCenter = center;
 
-        var gateObject = new GameObject("Gate");
-        gateObject.transform.position = new Vector3(spawnX, 0f, 0f);
-        var gate = gateObject.AddComponent<Gate>();
-        gate.Init(ship);
+        var gate = gatePool.Get();
+        gate.transform.position = new Vector3(spawnX, 0f, 0f);
+        gate.Init(ship, DespawnGate);
+        activeGates.Add(gate);
 
         FillColumn(gate, fieldBottom - rockSize, center - half); // нижняя колонна
         FillColumn(gate, center + half, fieldTop + rockSize);    // верхняя колонна
@@ -92,9 +131,28 @@ public class ObstacleSpawner : MonoBehaviour
     void SpawnRock(Gate gate, float y, float size)
     {
         var prefab = asteroidPrefabs[Random.Range(0, asteroidPrefabs.Length)];
-        Vector3 pos = gate.transform.position + new Vector3(Random.Range(-0.4f, 0.4f), y, Random.Range(-0.3f, 0.3f));
-        var rock = Instantiate(prefab, pos, Random.rotation, gate.transform);
+        var rock = rockPools[prefab].Get();
+        rock.transform.SetParent(gate.transform, false);
+        rock.transform.localPosition = new Vector3(Random.Range(-0.4f, 0.4f), y, Random.Range(-0.3f, 0.3f));
+        rock.transform.localRotation = Random.rotation;
         rock.transform.localScale = Vector3.one * size;
-        gate.AddRock(rock.transform);
+        gate.AddRock(rock.transform, prefab);
+    }
+
+    void DespawnGate(Gate gate)
+    {
+        activeGates.Remove(gate);
+        gatePool.Release(gate);
+    }
+
+    void ReleaseGateContents(Gate gate)
+    {
+        for (int i = 0; i < gate.RockCount; i++)
+        {
+            gate.GetRockAt(i, out var rock, out var sourcePrefab);
+            rockPools[sourcePrefab].Release(rock);
+        }
+        gate.ClearRocks();
+        gate.gameObject.SetActive(false);
     }
 }

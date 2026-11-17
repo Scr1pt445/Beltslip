@@ -20,6 +20,10 @@ public class ShipController : MonoBehaviour
     [SerializeField] ParticleSystem engineFx;   // пламя двигателя (дочерний к Ship, НЕ к Model)
     [SerializeField] GameObject explosionPrefab;
 
+    [Header("Тряска камеры")]
+    [SerializeField] float shakeDuration = 0.35f;
+    [SerializeField] float shakeMagnitude = 0.4f;
+
     Vector3 startPos;
     float verticalSpeed;
     bool alive = true;
@@ -83,7 +87,6 @@ public class ShipController : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!alive || GameManager.Instance.State != GameState.Playing) return;
-        if (other.GetComponentInParent<Gate>() == null) return; // врезались в астероид
         Die();
     }
 
@@ -93,7 +96,7 @@ public class ShipController : MonoBehaviour
         if (explosionPrefab) Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         model.gameObject.SetActive(false);
         if (engineFx) engineFx.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-        CameraShake.Shake(0.35f, 0.4f);
+        CameraShake.Shake(shakeDuration, shakeMagnitude);
         GameManager.Instance.GameOver();
     }
 }

@@ -1,26 +1,51 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 // Ворота из астероидов: едут влево со скоростью мира, крутят камни,
-// дают очко, когда корабль их прошёл, и удаляются за экраном.
+// дают очко, когда корабль их прошёл, и возвращаются в пул за экраном.
 public class Gate : MonoBehaviour
 {
-    const float DespawnX = -30f;
+    [SerializeField] float despawnX = -30f;
 
     Transform ship;
+    Action<Gate> onDespawn;
     bool scored;
 
     readonly List<Transform> rocks = new();
+    readonly List<GameObject> rockPrefabs = new();
     readonly List<Vector3> spinAxes = new();
     readonly List<float> spinSpeeds = new();
 
-    public void Init(Transform shipTransform) => ship = shipTransform;
+    public int RockCount => rocks.Count;
 
-    public void AddRock(Transform rock)
+    public void Init(Transform shipTransform, Action<Gate> despawnCallback)
+    {
+        ship = shipTransform;
+        onDespawn = despawnCallback;
+        scored = false;
+    }
+
+    public void AddRock(Transform rock, GameObject sourcePrefab)
     {
         rocks.Add(rock);
-        spinAxes.Add(Random.onUnitSphere);
-        spinSpeeds.Add(Random.Range(15f, 60f));
+        rockPrefabs.Add(sourcePrefab);
+        spinAxes.Add(UnityEngine.Random.onUnitSphere);
+        spinSpeeds.Add(UnityEngine.Random.Range(15f, 60f));
+    }
+
+    public void GetRockAt(int index, out GameObject rock, out GameObject sourcePrefab)
+    {
+        rock = rocks[index].gameObject;
+        sourcePrefab = rockPrefabs[index];
+    }
+
+    public void ClearRocks()
+    {
+        rocks.Clear();
+        rockPrefabs.Clear();
+        spinAxes.Clear();
+        spinSpeeds.Clear();
     }
 
     void Update()
@@ -38,7 +63,7 @@ public class Gate : MonoBehaviour
             gm.AddScore();
         }
 
-        if (transform.position.x < DespawnX)
-            Destroy(gameObject);
+        if (transform.position.x < despawnX)
+            onDespawn?.Invoke(this);
     }
 }

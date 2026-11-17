@@ -6535,6 +6535,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fdb4395e2747f04985f0b22202637a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gatePrefab: {fileID: 1084122388837331124, guid: 90258026e5ec47746915ba4b155395a3, type: 3}
   asteroidPrefabs:
   - {fileID: 3081797666341512190, guid: 264f91be6b7b0564f8b9b27af4add2dc, type: 3}
   - {fileID: 3081797666341512190, guid: 264f91be6b7b0564f8b9b27af4add2dc, type: 3}
@@ -6802,7 +6803,7 @@ GameObject:
   - component: {fileID: 1713863521}
   - component: {fileID: 1713863520}
   - component: {fileID: 1713863519}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ship
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6849,6 +6850,8 @@ MonoBehaviour:
   rotationSmooth: 10
   engineFx: {fileID: 0}
   explosionPrefab: {fileID: 8366257511274089510, guid: 6e5f5b9ea93c68d49bdbf96fd73b364e, type: 3}
+  shakeDuration: 0.35
+  shakeMagnitude: 0.4
 --- !u!65 &1713863520
 BoxCollider:
   m_ObjectHideFlags: 0
