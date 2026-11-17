@@ -8,6 +8,8 @@ public class ObstacleSpawner : MonoBehaviour
 {
     [SerializeField] Gate gatePrefab;
     [SerializeField] GameObject[] asteroidPrefabs;
+    [SerializeField] EnergyCore energyCorePrefab;
+    [SerializeField] RogueAsteroid rogueAsteroidPrefab;
     [SerializeField] Transform ship;
     [SerializeField] DifficultySettings difficulty;
 
@@ -22,8 +24,12 @@ public class ObstacleSpawner : MonoBehaviour
     [SerializeField, Range(0f, 0.5f)] float sizeJitter = 0.3f;
 
     ObjectPool<Gate> gatePool;
+    ObjectPool<EnergyCore> corePool;
+    ObjectPool<RogueAsteroid> roguePool;
     readonly Dictionary<GameObject, ObjectPool<GameObject>> rockPools = new();
     readonly List<Gate> activeGates = new();
+    readonly List<EnergyCore> activeCores = new();
+    readonly List<RogueAsteroid> activeRogues = new();
 
     float distanceSinceLast;
     float lastGapCenter;
@@ -57,12 +63,42 @@ public class ObstacleSpawner : MonoBehaviour
                 defaultCapacity: 20,
                 maxSize: 64);
         }
+
+        if (energyCorePrefab != null)
+        {
+            corePool = new ObjectPool<EnergyCore>(
+                createFunc: () => Instantiate(energyCorePrefab, transform),
+                actionOnGet: core => core.gameObject.SetActive(true),
+                actionOnRelease: core => core.gameObject.SetActive(false),
+                actionOnDestroy: core => { if (core) Destroy(core.gameObject); },
+                collectionCheck: false,
+                defaultCapacity: 4,
+                maxSize: 12);
+        }
+
+        if (rogueAsteroidPrefab != null)
+        {
+            roguePool = new ObjectPool<RogueAsteroid>(
+                createFunc: () => Instantiate(rogueAsteroidPrefab, transform),
+                actionOnGet: rock => rock.gameObject.SetActive(true),
+                actionOnRelease: rock => rock.gameObject.SetActive(false),
+                actionOnDestroy: rock => { if (rock) Destroy(rock.gameObject); },
+                collectionCheck: false,
+                defaultCapacity: 4,
+                maxSize: 12);
+        }
     }
 
     public void ResetSpawner()
     {
         for (int i = activeGates.Count - 1; i >= 0; i--)
             DespawnGate(activeGates[i]);
+
+        for (int i = activeCores.Count - 1; i >= 0; i--)
+            DespawnCore(activeCores[i]);
+
+        for (int i = activeRogues.Count - 1; i >= 0; i--)
+            DespawnRogue(activeRogues[i]);
 
         distanceSinceLast = 0f;
         lastGapCenter = 0f;
@@ -80,11 +116,11 @@ public class ObstacleSpawner : MonoBehaviour
         if (distanceSinceLast >= spacing)
         {
             distanceSinceLast -= spacing;
-            SpawnGate(gm.Difficulty01);
+            SpawnGate(gm.Difficulty01, spacing);
         }
     }
 
-    void SpawnGate(float difficulty01)
+    void SpawnGate(float difficulty01, float spacing)
     {
         float startGap = difficulty ? difficulty.StartGap : 4.5f;
         float minGap = difficulty ? difficulty.MinGap : 2.8f;
@@ -108,10 +144,35 @@ public class ObstacleSpawner : MonoBehaviour
         var gate = gatePool.Get();
         gate.transform.position = new Vector3(spawnX, 0f, 0f);
         gate.Init(ship, DespawnGate);
+        if (GameManager.Instance.Score >= 4 && Random.value < Mathf.Lerp(0.15f, 0.45f, difficulty01))
+            gate.SetOscillation(Random.Range(0.55f, 1.2f), Random.Range(1.4f, 2.2f), Random.Range(0f, Mathf.PI * 2f));
         activeGates.Add(gate);
 
         FillColumn(gate, fieldBottom - rockSize, center - half); // нижняя колонна
         FillColumn(gate, center + half, fieldTop + rockSize);    // верхняя колонна
+
+        if (corePool != null && Random.value < 0.55f)
+        {
+            bool insideGate = Random.value < 0.5f;
+            float coreX = insideGate ? spawnX : spawnX + spacing * 0.5f;
+            float coreY = insideGate
+                ? center + Random.Range(-half * 0.45f, half * 0.45f)
+                : Random.Range(fieldBottom + edgeMargin + 1f, fieldTop - edgeMargin - 1f);
+            var core = corePool.Get();
+            core.transform.position = new Vector3(coreX, coreY, 0f);
+            core.Init(coreY, DespawnCore);
+            activeCores.Add(core);
+        }
+
+        if (roguePool != null && GameManager.Instance.Score >= 8 && Random.value < Mathf.Lerp(0.15f, 0.35f, difficulty01))
+        {
+            float rogueY = Random.Range(fieldBottom + edgeMargin + 1.2f, fieldTop - edgeMargin - 1.2f);
+            var rogue = roguePool.Get();
+            rogue.transform.position = new Vector3(spawnX + spacing * 0.55f, rogueY, 0f);
+            rogue.transform.localScale = Vector3.one * (rockSize * Random.Range(0.75f, 1.05f));
+            rogue.Init(Random.Range(-0.6f, 0.6f), DespawnRogue);
+            activeRogues.Add(rogue);
+        }
     }
 
     // Укладывает астероиды снизу вверх; края колонн точно прилегают к проходу
@@ -147,6 +208,18 @@ public class ObstacleSpawner : MonoBehaviour
     {
         activeGates.Remove(gate);
         gatePool.Release(gate);
+    }
+
+    void DespawnCore(EnergyCore core)
+    {
+        if (activeCores.Remove(core))
+            corePool.Release(core);
+    }
+
+    void DespawnRogue(RogueAsteroid rogue)
+    {
+        if (activeRogues.Remove(rogue))
+            roguePool.Release(rogue);
     }
 
     void ReleaseGateContents(Gate gate)

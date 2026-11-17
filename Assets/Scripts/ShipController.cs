@@ -17,7 +17,7 @@ public class ShipController : MonoBehaviour
     [SerializeField] float maxPitch = 25f;      // нос вверх/вниз
     [SerializeField] float maxRoll = 15f;       // крен для объёма
     [SerializeField] float rotationSmooth = 10f;
-    [SerializeField] ParticleSystem engineFx;   // пламя двигателя (дочерний к Ship, НЕ к Model)
+    [SerializeField] ParticleSystem engineFx;   // пламя двигателя (дочерний к Model у сопла)
     [SerializeField] GameObject explosionPrefab;
 
     [Header("Тряска камеры")]
@@ -65,7 +65,10 @@ public class ShipController : MonoBehaviour
         if (engineFx)
         {
             var emission = engineFx.emission;
-            emission.rateOverTime = thrusting ? 120f : 40f;
+            emission.rateOverTime = thrusting ? 140f : 45f;
+            var main = engineFx.main;
+            main.startSpeed = thrusting ? new ParticleSystem.MinMaxCurve(6.5f, 9.0f) : new ParticleSystem.MinMaxCurve(3.5f, 5.0f);
+            main.startSize = thrusting ? new ParticleSystem.MinMaxCurve(0.28f, 0.46f) : new ParticleSystem.MinMaxCurve(0.18f, 0.30f);
         }
 
         Vector3 pos = transform.position;
@@ -94,6 +97,14 @@ public class ShipController : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!alive || GameManager.Instance.State != GameState.Playing) return;
+
+        if (other.TryGetComponent<EnergyCore>(out var core))
+        {
+            int bonus = core.Collect();
+            if (bonus > 0) GameManager.Instance.AddScore(bonus);
+            return;
+        }
+
         Die();
     }
 

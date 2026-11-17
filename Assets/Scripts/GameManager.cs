@@ -110,10 +110,10 @@ public class GameManager : MonoBehaviour
         SetState(GameState.Playing);
     }
 
-    public void AddScore()
+    public void AddScore(int amount = 1)
     {
-        if (State != GameState.Playing) return;
-        Score++;
+        if (State != GameState.Playing || amount <= 0) return;
+        Score += amount;
         OnScoreChanged?.Invoke(Score);
     }
 

@@ -11,6 +11,9 @@ public class Gate : MonoBehaviour
     Transform ship;
     Action<Gate> onDespawn;
     bool scored;
+    float oscAmplitude;
+    float oscFrequency;
+    float oscPhase;
 
     readonly List<Transform> rocks = new();
     readonly List<GameObject> rockPrefabs = new();
@@ -24,6 +27,16 @@ public class Gate : MonoBehaviour
         ship = shipTransform;
         onDespawn = despawnCallback;
         scored = false;
+        oscAmplitude = 0f;
+        oscFrequency = 0f;
+        oscPhase = 0f;
+    }
+
+    public void SetOscillation(float amplitude, float frequency, float phase)
+    {
+        oscAmplitude = amplitude;
+        oscFrequency = frequency;
+        oscPhase = phase;
     }
 
     public void AddRock(Transform rock, GameObject sourcePrefab)
@@ -52,7 +65,11 @@ public class Gate : MonoBehaviour
     {
         var gm = GameManager.Instance;
 
-        transform.position += Vector3.left * gm.Speed * Time.deltaTime;
+        Vector3 pos = transform.position;
+        pos.x -= gm.Speed * Time.deltaTime;
+        if (oscAmplitude > 0f && gm.State == GameState.Playing)
+            pos.y = Mathf.Sin(Time.time * oscFrequency + oscPhase) * oscAmplitude;
+        transform.position = pos;
 
         for (int i = 0; i < rocks.Count; i++)
             rocks[i].Rotate(spinAxes[i], spinSpeeds[i] * Time.deltaTime, Space.World);
