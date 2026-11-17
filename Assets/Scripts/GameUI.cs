@@ -1,20 +1,26 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
-// Отображение счёта, меню и экрана поражения по событиям GameManager.
+// Отображение счёта, меню, паузы и экрана поражения по событиям GameManager.
 public class GameUI : MonoBehaviour
 {
     [SerializeField] TMP_Text scoreText;
     [SerializeField] GameObject menuPanel;
+    [SerializeField] GameObject pausedPanel;
     [SerializeField] GameObject gameOverPanel;
     [SerializeField] TMP_Text finalScoreText;
     [SerializeField] TMP_Text bestScoreText;
+    [SerializeField] Button pauseButton;
+    [SerializeField] Button resumeButton;
 
     bool subscribed;
 
     void OnEnable()
     {
         TrySubscribe();
+        if (pauseButton) pauseButton.onClick.AddListener(HandlePauseClicked);
+        if (resumeButton) resumeButton.onClick.AddListener(HandleResumeClicked);
     }
 
     void Start()
@@ -30,6 +36,8 @@ public class GameUI : MonoBehaviour
     void OnDisable()
     {
         Unsubscribe();
+        if (pauseButton) pauseButton.onClick.RemoveListener(HandlePauseClicked);
+        if (resumeButton) resumeButton.onClick.RemoveListener(HandleResumeClicked);
     }
 
     void TrySubscribe()
@@ -55,6 +63,9 @@ public class GameUI : MonoBehaviour
         subscribed = false;
     }
 
+    void HandlePauseClicked() => GameManager.Instance?.Pause();
+    void HandleResumeClicked() => GameManager.Instance?.Resume();
+
     void HandleScoreChanged(int score)
     {
         scoreText.text = score.ToString();
@@ -63,8 +74,10 @@ public class GameUI : MonoBehaviour
     void HandleStateChanged(GameState state)
     {
         menuPanel.SetActive(state == GameState.Menu);
+        if (pausedPanel) pausedPanel.SetActive(state == GameState.Paused);
         gameOverPanel.SetActive(state == GameState.GameOver);
-        scoreText.gameObject.SetActive(state == GameState.Playing);
+        scoreText.gameObject.SetActive(state == GameState.Playing || state == GameState.Paused);
+        if (pauseButton) pauseButton.gameObject.SetActive(state == GameState.Playing);
 
         if (state == GameState.GameOver)
         {

@@ -21,6 +21,7 @@ public class GameAudio : MonoBehaviour
     [SerializeField] float volumeSmooth = 10f;
 
     bool subscribed;
+    GameState lastState = GameState.Menu;
 
     void OnEnable()
     {
@@ -86,7 +87,7 @@ public class GameAudio : MonoBehaviour
     {
         if (state == GameState.Playing)
         {
-            if (sfxSource && clickClip)
+            if (lastState != GameState.Paused && sfxSource && clickClip)
                 sfxSource.PlayOneShot(clickClip);
 
             if (engineSource && engineClip)
@@ -95,9 +96,21 @@ public class GameAudio : MonoBehaviour
                 engineSource.loop = true;
                 engineSource.volume = idleVolume;
                 engineSource.pitch = idlePitch;
-                if (!engineSource.isPlaying)
+                if (lastState == GameState.Paused)
+                    engineSource.UnPause();
+                else if (!engineSource.isPlaying)
                     engineSource.Play();
             }
+
+            lastState = state;
+            return;
+        }
+
+        if (state == GameState.Paused)
+        {
+            if (engineSource && engineSource.isPlaying)
+                engineSource.Pause();
+            lastState = state;
             return;
         }
 
@@ -106,5 +119,7 @@ public class GameAudio : MonoBehaviour
 
         if (state == GameState.GameOver && sfxSource && explosionClip)
             sfxSource.PlayOneShot(explosionClip);
+
+        lastState = state;
     }
 }

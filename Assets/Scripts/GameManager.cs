@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public enum GameState { Menu, Playing, GameOver }
+public enum GameState { Menu, Playing, Paused, GameOver }
 
 // Состояние игры, скорость мира и счёт. Про UI и звук не знает — сообщает событиями.
 public class GameManager : MonoBehaviour
@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        Time.timeScale = 1f;
         highScore = new HighScore();
     }
 
@@ -45,11 +46,35 @@ public class GameManager : MonoBehaviour
         SetState(GameState.Menu);
     }
 
+    void OnDestroy()
+    {
+        Time.timeScale = 1f;
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus && State == GameState.Playing)
+            Pause();
+    }
+
     void Update()
     {
         if (State == GameState.Playing)
         {
+            if (InputHelper.PausePressed())
+            {
+                Pause();
+                return;
+            }
+
             Speed = Mathf.Min(MaxSpeed, Speed + SpeedGainPerSecond * Time.deltaTime);
+            return;
+        }
+
+        if (State == GameState.Paused)
+        {
+            if (InputHelper.PausePressed())
+                Resume();
             return;
         }
 
@@ -61,12 +86,27 @@ public class GameManager : MonoBehaviour
 
     void StartGame()
     {
+        Time.timeScale = 1f;
         Score = 0;
         Speed = StartSpeed;
         spawner.ResetSpawner();
         ship.ResetShip();
 
         OnScoreChanged?.Invoke(Score);
+        SetState(GameState.Playing);
+    }
+
+    public void Pause()
+    {
+        if (State != GameState.Playing) return;
+        Time.timeScale = 0f;
+        SetState(GameState.Paused);
+    }
+
+    public void Resume()
+    {
+        if (State != GameState.Paused) return;
+        Time.timeScale = 1f;
         SetState(GameState.Playing);
     }
 
@@ -81,6 +121,7 @@ public class GameManager : MonoBehaviour
     {
         if (State != GameState.Playing) return;
 
+        Time.timeScale = 1f;
         Speed = 0f; // мир замирает
         highScore.TrySet(Score);
         inputBlockedUntil = Time.unscaledTime + restartDelay;
