@@ -49,6 +49,7 @@ public class ShipController : MonoBehaviour
     void Update()
     {
         var gm = GameManager.Instance;
+        if (gm == null) return;
 
         if (gm.State == GameState.Menu)
         {

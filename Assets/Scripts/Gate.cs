@@ -62,6 +62,7 @@ public class Gate : MonoBehaviour
     void Update()
     {
         var gm = GameManager.Instance;
+        if (gm == null) return;
 
         Vector3 pos = transform.position;
         pos.x -= gm.Speed * Time.deltaTime;

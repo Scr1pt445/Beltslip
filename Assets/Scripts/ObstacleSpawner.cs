@@ -107,7 +107,7 @@ public class ObstacleSpawner : MonoBehaviour
     void Update()
     {
         var gm = GameManager.Instance;
-        if (gm.State != GameState.Playing) return;
+        if (gm == null || gm.State != GameState.Playing) return;
 
         distanceSinceLast += gm.Speed * Time.deltaTime;
         float startSpacing = difficulty ? difficulty.StartSpacing : 11f;
