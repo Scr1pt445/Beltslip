@@ -14,11 +14,11 @@ public class GameAudio : MonoBehaviour
     [SerializeField] AudioClip engineClip;
 
     [Header("Двигатель")]
-    [SerializeField] float idleVolume = 0.15f;
-    [SerializeField] float thrustVolume = 0.45f;
-    [SerializeField] float idlePitch = 0.9f;
-    [SerializeField] float thrustPitch = 1.15f;
-    [SerializeField] float volumeSmooth = 10f;
+    [SerializeField] float idleVolume = 0.08f;
+    [SerializeField] float thrustVolume = 0.22f;
+    [SerializeField] float idlePitch = 0.92f;
+    [SerializeField] float thrustPitch = 1.12f;
+    [SerializeField] float volumeSmooth = 8f;
 
     bool subscribed;
     GameState lastState = GameState.Menu;

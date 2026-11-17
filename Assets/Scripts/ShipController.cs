@@ -58,8 +58,15 @@ public class ShipController : MonoBehaviour
 
         if (!alive || gm.State != GameState.Playing) return;
 
-        float accel = InputHelper.ThrustHeld() ? thrust : -gravity;
+        bool thrusting = InputHelper.ThrustHeld();
+        float accel = thrusting ? thrust : -gravity;
         verticalSpeed = Mathf.Clamp(verticalSpeed + accel * Time.deltaTime, -maxVerticalSpeed, maxVerticalSpeed);
+
+        if (engineFx)
+        {
+            var emission = engineFx.emission;
+            emission.rateOverTime = thrusting ? 120f : 40f;
+        }
 
         Vector3 pos = transform.position;
         pos.y += verticalSpeed * Time.deltaTime;
