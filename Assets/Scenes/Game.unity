@@ -6626,9 +6626,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1a3125c440be0940b2b903a494c9b85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startSpeed: 7
-  maxSpeed: 16
-  speedGainPerSecond: 0.15
+  difficulty: {fileID: 11400000, guid: 23cf1ba09f4d81148b8b6f81a917a4a6, type: 2}
   restartDelay: 0.8
   ship: {fileID: 1713863519}
   spawner: {fileID: 1483893389}
@@ -6796,16 +6794,11 @@ MonoBehaviour:
   - {fileID: 3081797666341512190, guid: 6c0ba1e66a14d624b80a270a0e97ec9f, type: 3}
   - {fileID: 3081797666341512190, guid: f100a0d994d3b354593dfeaf9aefcc9c, type: 3}
   ship: {fileID: 1713863518}
+  difficulty: {fileID: 11400000, guid: 23cf1ba09f4d81148b8b6f81a917a4a6, type: 2}
   spawnX: 24
   fieldBottom: -6.5
   fieldTop: 6.5
   edgeMargin: 1
-  startGap: 4.5
-  minGap: 2.8
-  startSpacing: 11
-  minSpacing: 9
-  startMaxShift: 2
-  endMaxShift: 3.5
   rockSize: 1.5
   sizeJitter: 0.3
 --- !u!224 &1483893390

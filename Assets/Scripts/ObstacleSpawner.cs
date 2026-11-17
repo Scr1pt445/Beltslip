@@ -9,20 +9,13 @@ public class ObstacleSpawner : MonoBehaviour
     [SerializeField] Gate gatePrefab;
     [SerializeField] GameObject[] asteroidPrefabs;
     [SerializeField] Transform ship;
+    [SerializeField] DifficultySettings difficulty;
 
     [Header("Поле")]
     [SerializeField] float spawnX = 24f;
     [SerializeField] float fieldBottom = -6.5f;
     [SerializeField] float fieldTop = 6.5f;
     [SerializeField] float edgeMargin = 1f; // минимум между краем поля и проходом
-
-    [Header("Сложность: старт -> максимум")]
-    [SerializeField] float startGap = 4.5f;
-    [SerializeField] float minGap = 2.8f;
-    [SerializeField] float startSpacing = 11f;   // расстояние между воротами
-    [SerializeField] float minSpacing = 9f;
-    [SerializeField] float startMaxShift = 2f;   // насколько проход может сместиться от предыдущего
-    [SerializeField] float endMaxShift = 3.5f;
 
     [Header("Астероиды")]
     [SerializeField] float rockSize = 1.5f;
@@ -81,6 +74,8 @@ public class ObstacleSpawner : MonoBehaviour
         if (gm.State != GameState.Playing) return;
 
         distanceSinceLast += gm.Speed * Time.deltaTime;
+        float startSpacing = difficulty ? difficulty.StartSpacing : 11f;
+        float minSpacing = difficulty ? difficulty.MinSpacing : 9f;
         float spacing = GateSpawnLogic.GetSpacing(startSpacing, minSpacing, gm.Difficulty01);
         if (distanceSinceLast >= spacing)
         {
@@ -89,16 +84,21 @@ public class ObstacleSpawner : MonoBehaviour
         }
     }
 
-    void SpawnGate(float difficulty)
+    void SpawnGate(float difficulty01)
     {
-        float gap = GateSpawnLogic.GetGap(startGap, minGap, difficulty);
+        float startGap = difficulty ? difficulty.StartGap : 4.5f;
+        float minGap = difficulty ? difficulty.MinGap : 2.8f;
+        float startMaxShift = difficulty ? difficulty.StartMaxShift : 2f;
+        float endMaxShift = difficulty ? difficulty.EndMaxShift : 3.5f;
+
+        float gap = GateSpawnLogic.GetGap(startGap, minGap, difficulty01);
         float half = gap * 0.5f;
         float center = GateSpawnLogic.GetNextGapCenter(
             lastGapCenter,
             Random.Range(-1f, 1f),
             startMaxShift,
             endMaxShift,
-            difficulty,
+            difficulty01,
             gap,
             fieldBottom,
             fieldTop,

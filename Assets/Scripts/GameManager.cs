@@ -8,12 +8,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Скорость мира")]
-    [SerializeField] float startSpeed = 7f;
-    [SerializeField] float maxSpeed = 16f;
-    [SerializeField] float speedGainPerSecond = 0.15f;
-
-    [Header("Правила")]
+    [Header("Настройки")]
+    [SerializeField] DifficultySettings difficulty;
     [SerializeField] float restartDelay = 0.8f;
 
     [Header("Ссылки")]
@@ -29,7 +25,11 @@ public class GameManager : MonoBehaviour
     public int BestScore => highScore != null ? highScore.Best : 0;
 
     // 0 на старте, 1 на максимальной скорости — от этого зависит сложность спавна
-    public float Difficulty01 => Mathf.InverseLerp(startSpeed, maxSpeed, Speed);
+    public float Difficulty01 => Mathf.InverseLerp(StartSpeed, MaxSpeed, Speed);
+
+    float StartSpeed => difficulty ? difficulty.StartSpeed : 7f;
+    float MaxSpeed => difficulty ? difficulty.MaxSpeed : 16f;
+    float SpeedGainPerSecond => difficulty ? difficulty.SpeedGainPerSecond : 0.15f;
 
     HighScore highScore;
     float inputBlockedUntil;
@@ -49,7 +49,7 @@ public class GameManager : MonoBehaviour
     {
         if (State == GameState.Playing)
         {
-            Speed = Mathf.Min(maxSpeed, Speed + speedGainPerSecond * Time.deltaTime);
+            Speed = Mathf.Min(MaxSpeed, Speed + SpeedGainPerSecond * Time.deltaTime);
             return;
         }
 
@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
     void StartGame()
     {
         Score = 0;
-        Speed = startSpeed;
+        Speed = StartSpeed;
         spawner.ResetSpawner();
         ship.ResetShip();
 
