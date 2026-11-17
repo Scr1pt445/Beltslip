@@ -192,21 +192,26 @@ public class ObstacleSpawner : MonoBehaviour
         }
     }
 
-    // Укладывает астероиды снизу вверх; края колонн точно прилегают к проходу
+    // Укладывает астероиды снизу вверх без нахлёста друг в друга; края колонн точно прилегают к проходу
     void FillColumn(Gate gate, float fromY, float toY)
     {
         float y = fromY;
         while (y < toY)
         {
+            float remaining = toY - y;
+            if (remaining < rockSize * 0.4f) break;
+
             float size = rockSize * Random.Range(1f - sizeJitter, 1f + sizeJitter);
+            bool last = remaining <= size * 1.15f;
+            if (last) size = Mathf.Clamp(remaining, rockSize * 0.55f, rockSize * (1f + sizeJitter));
+
             float radius = size * 0.5f;
-            bool last = y + size >= toY;
             float centerY = last ? toY - radius : y + radius;
 
             SpawnRock(gate, centerY, size);
 
             if (last) break;
-            y = centerY + radius * 0.75f; // лёгкое перекрытие, чтобы не было щелей
+            y = centerY + radius * 0.98f;
         }
     }
 
@@ -215,7 +220,7 @@ public class ObstacleSpawner : MonoBehaviour
         var prefab = asteroidPrefabs[Random.Range(0, asteroidPrefabs.Length)];
         var rock = rockPools[prefab].Get();
         rock.transform.SetParent(gate.transform, false);
-        rock.transform.localPosition = new Vector3(Random.Range(-0.4f, 0.4f), y, Random.Range(-0.3f, 0.3f));
+        rock.transform.localPosition = new Vector3(Random.Range(-0.18f, 0.18f), y, Random.Range(-0.08f, 0.08f));
         rock.transform.localRotation = Random.rotation;
         rock.transform.localScale = Vector3.one * size;
         gate.AddRock(rock.transform, prefab);
