@@ -81,7 +81,7 @@ public class ObstacleSpawner : MonoBehaviour
         if (gm.State != GameState.Playing) return;
 
         distanceSinceLast += gm.Speed * Time.deltaTime;
-        float spacing = Mathf.Lerp(startSpacing, minSpacing, gm.Difficulty01);
+        float spacing = GateSpawnLogic.GetSpacing(startSpacing, minSpacing, gm.Difficulty01);
         if (distanceSinceLast >= spacing)
         {
             distanceSinceLast -= spacing;
@@ -91,14 +91,18 @@ public class ObstacleSpawner : MonoBehaviour
 
     void SpawnGate(float difficulty)
     {
-        float gap = Mathf.Lerp(startGap, minGap, difficulty);
+        float gap = GateSpawnLogic.GetGap(startGap, minGap, difficulty);
         float half = gap * 0.5f;
-        float shift = Mathf.Lerp(startMaxShift, endMaxShift, difficulty);
-
-        float center = Mathf.Clamp(
-            lastGapCenter + Random.Range(-shift, shift),
-            fieldBottom + edgeMargin + half,
-            fieldTop - edgeMargin - half);
+        float center = GateSpawnLogic.GetNextGapCenter(
+            lastGapCenter,
+            Random.Range(-1f, 1f),
+            startMaxShift,
+            endMaxShift,
+            difficulty,
+            gap,
+            fieldBottom,
+            fieldTop,
+            edgeMargin);
         lastGapCenter = center;
 
         var gate = gatePool.Get();
