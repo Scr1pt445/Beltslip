@@ -10,7 +10,6 @@ public class Gate : MonoBehaviour
 
     Transform ship;
     Action<Gate> onDespawn;
-    bool scored;
     float oscAmplitude;
     float oscFrequency;
     float oscPhase;
@@ -26,7 +25,6 @@ public class Gate : MonoBehaviour
     {
         ship = shipTransform;
         onDespawn = despawnCallback;
-        scored = false;
         oscAmplitude = 0f;
         oscFrequency = 0f;
         oscPhase = 0f;
@@ -73,12 +71,6 @@ public class Gate : MonoBehaviour
 
         for (int i = 0; i < rocks.Count; i++)
             rocks[i].Rotate(spinAxes[i], spinSpeeds[i] * Time.deltaTime, Space.World);
-
-        if (!scored && gm.State == GameState.Playing && transform.position.x < ship.position.x)
-        {
-            scored = true;
-            gm.AddScore();
-        }
 
         if (transform.position.x < despawnX)
             onDespawn?.Invoke(this);

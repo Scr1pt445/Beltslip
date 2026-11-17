@@ -144,34 +144,51 @@ public class ObstacleSpawner : MonoBehaviour
         var gate = gatePool.Get();
         gate.transform.position = new Vector3(spawnX, 0f, 0f);
         gate.Init(ship, DespawnGate);
-        if (GameManager.Instance.Score >= 4 && Random.value < Mathf.Lerp(0.15f, 0.45f, difficulty01))
-            gate.SetOscillation(Random.Range(0.55f, 1.2f), Random.Range(1.4f, 2.2f), Random.Range(0f, Mathf.PI * 2f));
+
+        float oscAmp = 0f;
+        if (GameManager.Instance.Score >= 6 && Random.value < Mathf.Lerp(0.15f, 0.35f, difficulty01))
+        {
+            float maxSafeAmp = Mathf.Min(
+                (center - half) - (fieldBottom + edgeMargin),
+                (fieldTop - edgeMargin) - (center + half)
+            );
+            if (maxSafeAmp >= 0.45f)
+            {
+                oscAmp = Mathf.Min(Random.Range(0.45f, 0.85f), maxSafeAmp);
+                gate.SetOscillation(oscAmp, Random.Range(1.0f, 1.5f), Random.Range(0f, Mathf.PI * 2f));
+            }
+        }
         activeGates.Add(gate);
 
-        FillColumn(gate, fieldBottom - rockSize, center - half); // нижняя колонна
-        FillColumn(gate, center + half, fieldTop + rockSize);    // верхняя колонна
+        float colPad = rockSize + oscAmp + 1.5f;
+        FillColumn(gate, fieldBottom - colPad, center - half); // нижняя колонна
+        FillColumn(gate, center + half, fieldTop + colPad);    // верхняя колонна
 
-        if (corePool != null && Random.value < 0.55f)
+        if (corePool != null)
         {
-            bool insideGate = Random.value < 0.5f;
-            float coreX = insideGate ? spawnX : spawnX + spacing * 0.5f;
-            float coreY = insideGate
-                ? center + Random.Range(-half * 0.45f, half * 0.45f)
-                : Random.Range(fieldBottom + edgeMargin + 1f, fieldTop - edgeMargin - 1f);
-            var core = corePool.Get();
-            core.transform.position = new Vector3(coreX, coreY, 0f);
-            core.Init(coreY, DespawnCore);
-            activeCores.Add(core);
-        }
+            // +1 циановый куб в проёме ворот
+            float gateCoreY = center + Random.Range(-half * 0.35f, half * 0.35f);
+            SpawnCore(spawnX, gateCoreY, 1, new Color(0.2f, 0.95f, 1f, 1f), new Color(0.2f, 1.5f, 1.8f, 1f));
 
-        if (roguePool != null && GameManager.Instance.Score >= 8 && Random.value < Mathf.Lerp(0.15f, 0.35f, difficulty01))
-        {
-            float rogueY = Random.Range(fieldBottom + edgeMargin + 1.2f, fieldTop - edgeMargin - 1.2f);
-            var rogue = roguePool.Get();
-            rogue.transform.position = new Vector3(spawnX + spacing * 0.55f, rogueY, 0f);
-            rogue.transform.localScale = Vector3.one * (rockSize * Random.Range(0.75f, 1.05f));
-            rogue.Init(Random.Range(-0.6f, 0.6f), DespawnRogue);
-            activeRogues.Add(rogue);
+            // +2 золотой куб между воротами (с шансом 45%)
+            bool spawnedBonus = Random.value < 0.45f;
+            if (spawnedBonus)
+            {
+                float bonusY = Mathf.Clamp(
+                    center + Random.Range(-2.5f, 2.5f),
+                    fieldBottom + edgeMargin + 1f,
+                    fieldTop - edgeMargin - 1f);
+                SpawnCore(spawnX + spacing * 0.5f, bonusY, 2, new Color(1f, 0.8f, 0.2f, 1f), new Color(1.8f, 1.2f, 0.15f, 1f));
+            }
+            else if (roguePool != null && GameManager.Instance.Score >= 12 && Random.value < Mathf.Lerp(0.12f, 0.25f, difficulty01))
+            {
+                float rogueY = Random.Range(fieldBottom + edgeMargin + 1.2f, fieldTop - edgeMargin - 1.2f);
+                var rogue = roguePool.Get();
+                rogue.transform.position = new Vector3(spawnX + spacing * 0.5f, rogueY, 0f);
+                rogue.transform.localScale = Vector3.one * (rockSize * Random.Range(0.55f, 0.75f));
+                rogue.Init(Random.Range(-0.25f, 0.25f), DespawnRogue);
+                activeRogues.Add(rogue);
+            }
         }
     }
 
@@ -208,6 +225,14 @@ public class ObstacleSpawner : MonoBehaviour
     {
         activeGates.Remove(gate);
         gatePool.Release(gate);
+    }
+
+    void SpawnCore(float x, float y, int points, Color baseColor, Color emissionColor)
+    {
+        var core = corePool.Get();
+        core.transform.position = new Vector3(x, y, 0f);
+        core.Init(y, points, baseColor, emissionColor, DespawnCore);
+        activeCores.Add(core);
     }
 
     void DespawnCore(EnergyCore core)

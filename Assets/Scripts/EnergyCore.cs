@@ -1,29 +1,48 @@
 using System;
 using UnityEngine;
 
-// Собираемый энерго-кристалл: летит влево вместе с миром, плавно вращается,
-// даёт бонусные очки при сборе и возвращается в пул.
+// Собираемый энерго-куб: летит влево вместе с миром, плавно вращается,
+// даёт очки (+1 в воротах — циановый, +2 между воротами — золотой) и возвращается в пул.
 public class EnergyCore : MonoBehaviour
 {
+    static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+
     [SerializeField] float despawnX = -30f;
-    [SerializeField] int bonusPoints = 2;
     [SerializeField] float spinSpeed = 120f;
-    [SerializeField] float bobAmplitude = 0.25f;
+    [SerializeField] float bobAmplitude = 0.2f;
     [SerializeField] float bobFrequency = 3f;
 
+    Renderer cachedRenderer;
+    MaterialPropertyBlock propBlock;
     Action<EnergyCore> onDespawn;
+    int points = 1;
     float baseY;
     float phase;
     bool collected;
 
-    public int BonusPoints => bonusPoints;
+    public int BonusPoints => points;
 
-    public void Init(float y, Action<EnergyCore> despawnCallback)
+    void Awake()
+    {
+        cachedRenderer = GetComponent<Renderer>();
+        propBlock = new MaterialPropertyBlock();
+    }
+
+    public void Init(float y, int pointValue, Color baseColor, Color emissionColor, Action<EnergyCore> despawnCallback)
     {
         baseY = y;
+        points = pointValue;
         phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
         onDespawn = despawnCallback;
         collected = false;
+
+        if (cachedRenderer != null)
+        {
+            propBlock.SetColor(BaseColorId, baseColor);
+            propBlock.SetColor(EmissionColorId, emissionColor);
+            cachedRenderer.SetPropertyBlock(propBlock);
+        }
     }
 
     public int Collect()
@@ -31,7 +50,7 @@ public class EnergyCore : MonoBehaviour
         if (collected) return 0;
         collected = true;
         onDespawn?.Invoke(this);
-        return bonusPoints;
+        return points;
     }
 
     void Update()

@@ -5,7 +5,7 @@ using UnityEngine;
 public class RogueAsteroid : MonoBehaviour
 {
     [SerializeField] float despawnX = -30f;
-    [SerializeField] float speedMultiplier = 1.35f;
+    [SerializeField] float speedMultiplier = 1.08f;
 
     Action<RogueAsteroid> onDespawn;
     Vector3 spinAxis;
