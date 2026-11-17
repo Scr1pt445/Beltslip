@@ -1,9 +1,9 @@
-using TMPro;
+using System;
 using UnityEngine;
 
 public enum GameState { Menu, Playing, GameOver }
 
-// Состояние игры, скорость мира, счёт, рекорд и UI.
+// Состояние игры, скорость мира и счёт. Про UI и звук не знает — сообщает событиями.
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -13,40 +13,36 @@ public class GameManager : MonoBehaviour
     [SerializeField] float maxSpeed = 16f;
     [SerializeField] float speedGainPerSecond = 0.15f;
 
+    [Header("Правила")]
+    [SerializeField] float restartDelay = 0.8f;
+
     [Header("Ссылки")]
     [SerializeField] ShipController ship;
     [SerializeField] ObstacleSpawner spawner;
 
-    [Header("UI")]
-    [SerializeField] TMP_Text scoreText;
-    [SerializeField] GameObject menuPanel;
-    [SerializeField] GameObject gameOverPanel;
-    [SerializeField] TMP_Text finalScoreText;
-    [SerializeField] TMP_Text bestScoreText;
+    public event Action<GameState> OnStateChanged;
+    public event Action<int> OnScoreChanged;
 
     public GameState State { get; private set; } = GameState.Menu;
     public float Speed { get; private set; }
     public int Score { get; private set; }
+    public int BestScore => highScore != null ? highScore.Best : 0;
 
     // 0 на старте, 1 на максимальной скорости — от этого зависит сложность спавна
     public float Difficulty01 => Mathf.InverseLerp(startSpeed, maxSpeed, Speed);
 
-    const string BestKey = "BestScore";
-    int best;
+    HighScore highScore;
     float inputBlockedUntil;
 
     void Awake()
     {
         Instance = this;
-        best = PlayerPrefs.GetInt(BestKey, 0);
+        highScore = new HighScore();
     }
 
     void Start()
     {
-        State = GameState.Menu;
-        menuPanel.SetActive(true);
-        gameOverPanel.SetActive(false);
-        scoreText.gameObject.SetActive(false);
+        SetState(GameState.Menu);
     }
 
     void Update()
@@ -70,42 +66,31 @@ public class GameManager : MonoBehaviour
         spawner.ResetSpawner();
         ship.ResetShip();
 
-        menuPanel.SetActive(false);
-        gameOverPanel.SetActive(false);
-        scoreText.gameObject.SetActive(true);
-        UpdateScoreText();
-
-        State = GameState.Playing;
+        OnScoreChanged?.Invoke(Score);
+        SetState(GameState.Playing);
     }
 
     public void AddScore()
     {
         if (State != GameState.Playing) return;
         Score++;
-        UpdateScoreText();
+        OnScoreChanged?.Invoke(Score);
     }
 
     public void GameOver()
     {
         if (State != GameState.Playing) return;
 
-        State = GameState.GameOver;
         Speed = 0f; // мир замирает
+        highScore.TrySet(Score);
+        inputBlockedUntil = Time.unscaledTime + restartDelay;
 
-        if (Score > best)
-        {
-            best = Score;
-            PlayerPrefs.SetInt(BestKey, best);
-            PlayerPrefs.Save();
-        }
-
-        finalScoreText.text = $"Score: {Score}";
-        bestScoreText.text = $"Best: {best}";
-        scoreText.gameObject.SetActive(false);
-        gameOverPanel.SetActive(true);
-
-        inputBlockedUntil = Time.unscaledTime + 0.8f;
+        SetState(GameState.GameOver);
     }
 
-    void UpdateScoreText() => scoreText.text = Score.ToString();
+    void SetState(GameState state)
+    {
+        State = state;
+        OnStateChanged?.Invoke(state);
+    }
 }
