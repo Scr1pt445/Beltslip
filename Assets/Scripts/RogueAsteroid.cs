@@ -8,9 +8,15 @@ public class RogueAsteroid : MonoBehaviour
     [SerializeField] float speedMultiplier = 1.08f;
 
     Action<RogueAsteroid> onDespawn;
+    TrailRenderer trail;
     Vector3 spinAxis;
     float spinSpeed;
     float verticalDrift;
+
+    void Awake()
+    {
+        trail = GetComponent<TrailRenderer>();
+    }
 
     public void Init(float driftY, Action<RogueAsteroid> despawnCallback)
     {
@@ -18,6 +24,7 @@ public class RogueAsteroid : MonoBehaviour
         onDespawn = despawnCallback;
         spinAxis = UnityEngine.Random.onUnitSphere;
         spinSpeed = UnityEngine.Random.Range(90f, 180f);
+        if (trail != null) trail.Clear();
     }
 
     void Update()
